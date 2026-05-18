@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5KB - 10KB Image Compressor</title>
+
+<style>
+    body{
+        font-family: Arial;
+        background:#f2f2f2;
+        padding:40px;
+    }
+
+    .box{
+        background:#fff;
+        padding:20px;
+        width:400px;
+        border-radius:10px;
+        box-shadow:0 0 10px rgba(0,0,0,0.2);
+    }
+
+    img{
+        max-width:100%;
+        margin-top:15px;
+    }
+
+    button{
+        padding:10px 20px;
+        margin-top:15px;
+        cursor:pointer;
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+
+    <h2>Compress Image to 5KB - 10KB</h2>
+
+    <input type="file" id="upload">
+
+    <p id="original"></p>
+    <p id="compressed"></p>
+
+    <button id="downloadBtn" style="display:none;">
+        Download Image
+    </button>
+
+    <img id="preview">
+
+</div>
+
+<script>
+
+let finalBlob = null;
+let originalName = "";
+
+document.getElementById("upload").addEventListener("change", async function(e){
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    originalName = file.name.replace(/\.[^/.]+$/, "");
+
+    document.getElementById("original").innerHTML =
+        "Original Size: " + (file.size / 1024).toFixed(2) + " KB";
+
+    const img = new Image();
+
+    img.src = URL.createObjectURL(file);
+
+    img.onload = async function(){
+
+        let width = img.width;
+        let height = img.height;
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Start size
+        width = width * 0.5;
+        height = height * 0.5;
+
+        let quality = 0.9;
+        let blob = null;
+
+        // Loop until size between 5KB and 10KB
+        while(true){
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.clearRect(0,0,width,height);
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            blob = await new Promise(resolve =>
+                canvas.toBlob(resolve, "image/jpeg", quality)
+            );
+
+            const sizeKB = blob.size / 1024;
+
+            console.log("Trying:", sizeKB.toFixed(2), "KB");
+
+            // SUCCESS
+            if(sizeKB >= 5 && sizeKB <= 10){
+                break;
+            }
+
+            // Reduce quality
+            if(sizeKB > 10){
+                quality -= 0.05;
+            }
+
+            // Reduce dimensions
+            if(quality <= 0.1){
+                quality = 0.9;
+
+                width *= 0.9;
+                height *= 0.9;
+            }
+
+            // Safety stop
+            if(width < 50 || height < 50){
+                break;
+            }
+        }
+
+        finalBlob = blob;
+
+        document.getElementById("compressed").innerHTML =
+            "Compressed Size: " +
+            (blob.size / 1024).toFixed(2) + " KB";
+
+        document.getElementById("preview").src =
+            URL.createObjectURL(blob);
+
+        document.getElementById("downloadBtn").style.display = "inline-block";
+    };
+});
+
+document.getElementById("downloadBtn").addEventListener("click", function(){
+
+    if(!finalBlob) return;
+
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(finalBlob);
+
+    a.download = originalName + ".jpg";
+
+    a.click();
+});
+
+</script>
+
+</body>
+</html>
