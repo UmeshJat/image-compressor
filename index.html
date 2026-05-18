@@ -1,53 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>5KB - 10KB Image Compressor</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Image Compressor 5KB - 10KB</title>
 
 <style>
-    body{
-        font-family: Arial;
-        background:#f2f2f2;
-        padding:40px;
-    }
 
-    .box{
-        background:#fff;
-        padding:20px;
-        width:400px;
-        border-radius:10px;
-        box-shadow:0 0 10px rgba(0,0,0,0.2);
-    }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-    img{
-        max-width:100%;
-        margin-top:15px;
-    }
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#4facfe,#00f2fe);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
 
-    button{
-        padding:10px 20px;
-        margin-top:15px;
-        cursor:pointer;
-    }
+.container{
+    width:100%;
+    max-width:450px;
+}
+
+.box{
+    background:#fff;
+    border-radius:18px;
+    padding:30px 25px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h2{
+    text-align:center;
+    margin-bottom:25px;
+    color:#222;
+}
+
+.upload-area{
+    border:2px dashed #4facfe;
+    border-radius:12px;
+    padding:25px;
+    text-align:center;
+    background:#f8fbff;
+    transition:0.3s;
+}
+
+.upload-area:hover{
+    background:#eef7ff;
+}
+
+input[type="file"]{
+    display:none;
+}
+
+.upload-btn{
+    display:inline-block;
+    background:#4facfe;
+    color:#fff;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+.upload-btn:hover{
+    background:#2196f3;
+}
+
+.info{
+    margin-top:20px;
+    background:#f5f5f5;
+    padding:12px;
+    border-radius:10px;
+}
+
+.info p{
+    margin:8px 0;
+    color:#333;
+    font-size:15px;
+}
+
+.preview-box{
+    margin-top:20px;
+    text-align:center;
+}
+
+.preview-box img{
+    width:100%;
+    max-height:300px;
+    object-fit:contain;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+}
+
+button{
+    flex:1;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.download-btn{
+    background:#28a745;
+    color:#fff;
+}
+
+.download-btn:hover{
+    background:#1f8a38;
+}
+
+.reset-btn{
+    background:#ff5252;
+    color:#fff;
+}
+
+.reset-btn:hover{
+    background:#e53935;
+}
+
+.footer{
+    text-align:center;
+    margin-top:15px;
+    color:#666;
+    font-size:13px;
+}
+
 </style>
 </head>
 <body>
 
-<div class="box">
+<div class="container">
 
-    <h2>Compress Image to 5KB - 10KB</h2>
+    <div class="box">
 
-    <input type="file" id="upload">
+        <h2>Image Compressor (5KB - 10KB)</h2>
 
-    <p id="original"></p>
-    <p id="compressed"></p>
+        <div class="upload-area">
 
-    <button id="downloadBtn" style="display:none;">
-        Download Image
-    </button>
+            <label for="upload" class="upload-btn">
+                Choose Image
+            </label>
 
-    <img id="preview">
+            <input type="file" id="upload" accept="image/*">
+
+            <p style="margin-top:12px;color:#666;">
+                JPG, PNG Supported
+            </p>
+
+        </div>
+
+        <div class="info">
+
+            <p id="original">
+                Original Size: -
+            </p>
+
+            <p id="compressed">
+                Compressed Size: -
+            </p>
+
+            <p id="status">
+                Status: Waiting for image...
+            </p>
+
+        </div>
+
+        <div class="preview-box">
+            <img id="preview" src="" alt="">
+        </div>
+
+        <div class="buttons">
+
+            <button class="download-btn" id="downloadBtn" disabled>
+                Download
+            </button>
+
+            <button class="reset-btn" id="resetBtn">
+                Reset
+            </button>
+
+        </div>
+
+        <div class="footer">
+            Compress image automatically between 5KB to 10KB
+        </div>
+
+    </div>
 
 </div>
 
@@ -56,7 +211,15 @@
 let finalBlob = null;
 let originalName = "";
 
-document.getElementById("upload").addEventListener("change", async function(e){
+const upload = document.getElementById("upload");
+const originalText = document.getElementById("original");
+const compressedText = document.getElementById("compressed");
+const statusText = document.getElementById("status");
+const preview = document.getElementById("preview");
+const downloadBtn = document.getElementById("downloadBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+upload.addEventListener("change", async function(e){
 
     const file = e.target.files[0];
 
@@ -64,8 +227,11 @@ document.getElementById("upload").addEventListener("change", async function(e){
 
     originalName = file.name.replace(/\.[^/.]+$/, "");
 
-    document.getElementById("original").innerHTML =
-        "Original Size: " + (file.size / 1024).toFixed(2) + " KB";
+    originalText.innerHTML =
+        "Original Size: " +
+        (file.size / 1024).toFixed(2) + " KB";
+
+    statusText.innerHTML = "Status: Compressing...";
 
     const img = new Image();
 
@@ -79,14 +245,12 @@ document.getElementById("upload").addEventListener("change", async function(e){
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
-        // Start size
         width = width * 0.5;
         height = height * 0.5;
 
         let quality = 0.9;
         let blob = null;
 
-        // Loop until size between 5KB and 10KB
         while(true){
 
             canvas.width = width;
@@ -94,35 +258,32 @@ document.getElementById("upload").addEventListener("change", async function(e){
 
             ctx.clearRect(0,0,width,height);
 
-            ctx.drawImage(img, 0, 0, width, height);
+            ctx.drawImage(img,0,0,width,height);
 
             blob = await new Promise(resolve =>
-                canvas.toBlob(resolve, "image/jpeg", quality)
+                canvas.toBlob(resolve,"image/jpeg",quality)
             );
 
             const sizeKB = blob.size / 1024;
 
             console.log("Trying:", sizeKB.toFixed(2), "KB");
 
-            // SUCCESS
             if(sizeKB >= 5 && sizeKB <= 10){
                 break;
             }
 
-            // Reduce quality
             if(sizeKB > 10){
                 quality -= 0.05;
             }
 
-            // Reduce dimensions
             if(quality <= 0.1){
+
                 quality = 0.9;
 
                 width *= 0.9;
                 height *= 0.9;
             }
 
-            // Safety stop
             if(width < 50 || height < 50){
                 break;
             }
@@ -130,18 +291,19 @@ document.getElementById("upload").addEventListener("change", async function(e){
 
         finalBlob = blob;
 
-        document.getElementById("compressed").innerHTML =
+        compressedText.innerHTML =
             "Compressed Size: " +
             (blob.size / 1024).toFixed(2) + " KB";
 
-        document.getElementById("preview").src =
-            URL.createObjectURL(blob);
+        statusText.innerHTML = "Status: Compression Complete";
 
-        document.getElementById("downloadBtn").style.display = "inline-block";
+        preview.src = URL.createObjectURL(blob);
+
+        downloadBtn.disabled = false;
     };
 });
 
-document.getElementById("downloadBtn").addEventListener("click", function(){
+downloadBtn.addEventListener("click", function(){
 
     if(!finalBlob) return;
 
@@ -149,9 +311,26 @@ document.getElementById("downloadBtn").addEventListener("click", function(){
 
     a.href = URL.createObjectURL(finalBlob);
 
-    a.download = originalName + ".jpg";
+    a.download = originalName + "-compressed.jpg";
 
     a.click();
+});
+
+resetBtn.addEventListener("click", function(){
+
+    finalBlob = null;
+
+    upload.value = "";
+
+    preview.src = "";
+
+    originalText.innerHTML = "Original Size: -";
+
+    compressedText.innerHTML = "Compressed Size: -";
+
+    statusText.innerHTML = "Status: Waiting for image...";
+
+    downloadBtn.disabled = true;
 });
 
 </script>
